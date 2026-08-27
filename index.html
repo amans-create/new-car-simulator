@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>New Car Simulator</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap');
+
+  :root{
+    --navy:#0B2545;
+    --navy-2:#13315C;
+    --blue:#1D5FBF;
+    --amber:#F2A93B;
+    --green:#2E7D5B;
+    --red:#C1443D;
+    --bg:#F3F6FB;
+    --card:#FFFFFF;
+    --ink:#0B2545;
+    --muted:#5C6B85;
+    --line:#DDE4F0;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+  }
+  .wrap{max-width:1100px;margin:0 auto;padding:28px 20px 60px;}
+  h1,h2,h3{font-family:'Poppins',sans-serif;margin:0;}
+  .eyebrow{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--blue);font-weight:700;margin-bottom:6px;
+  }
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;
+    padding-bottom:18px;margin-bottom:24px;border-bottom:2px solid var(--line);
+  }
+  .brand{display:flex;align-items:center;gap:10px;}
+  .brand-badge{
+    width:38px;height:38px;border-radius:10px;
+    background:linear-gradient(135deg,var(--navy),var(--blue));
+    display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;
+  }
+  .brand-name{font-family:'Poppins',sans-serif;font-weight:800;font-size:17px;color:var(--navy);}
+  .brand-sub{font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;}
+  .pill-btn{
+    border:1.5px solid var(--line);background:#fff;color:var(--navy);
+    padding:8px 14px;border-radius:999px;font-size:13px;font-weight:600;cursor:pointer;
+    font-family:'Inter',sans-serif;
+  }
+  .pill-btn:hover{border-color:var(--blue);color:var(--blue);}
+
+  .card{
+    background:var(--card);border-radius:16px;padding:32px;
+    box-shadow:0 1px 3px rgba(11,37,69,.06), 0 12px 32px rgba(11,37,69,.06);
+    border:1px solid var(--line);
+  }
+
+  /* HOME */
+  .home-hero{text-align:center;padding:40px 20px 10px;}
+  .home-hero h1{font-size:34px;color:var(--navy);}
+  .home-hero p{color:var(--muted);max-width:520px;margin:12px auto 0;font-size:15px;line-height:1.6;}
+  .choice-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:32px;}
+  @media(max-width:640px){.choice-grid{grid-template-columns:1fr;}}
+  .choice-card{
+    background:#fff;border:1.5px solid var(--line);border-radius:16px;padding:26px;
+    cursor:pointer;text-align:left;transition:.15s;
+  }
+  .choice-card:hover{border-color:var(--blue);transform:translateY(-2px);box-shadow:0 10px 24px rgba(29,95,191,.12);}
+  .choice-card .ico{font-size:26px;margin-bottom:10px;}
+  .choice-card h3{font-size:18px;color:var(--navy);margin-bottom:6px;}
+  .choice-card p{color:var(--muted);font-size:13.5px;margin:0;line-height:1.5;}
+
+  /* FORM */
+  .field{margin-bottom:18px;}
+  label{display:block;font-size:12.5px;font-weight:700;color:var(--navy-2);margin-bottom:6px;letter-spacing:.02em;}
+  input[type=text], input[type=password], input[type=url], textarea, select{
+    width:100%;padding:11px 13px;border:1.5px solid var(--line);border-radius:9px;
+    font-size:14.5px;font-family:'Inter',sans-serif;color:var(--ink);background:#fff;
+  }
+  input:focus, textarea:focus, select:focus{outline:none;border-color:var(--blue);}
+  .btn{
+    background:var(--navy);color:#fff;border:none;padding:12px 22px;border-radius:9px;
+    font-weight:700;font-size:14.5px;cursor:pointer;font-family:'Inter',sans-serif;
+  }
+  .btn:hover{background:var(--navy-2);}
+  .btn.amber{background:var(--amber);color:var(--navy);}
+  .btn.amber:hover{background:#e0961f;}
+  .btn.outline{background:#fff;color:var(--navy);border:1.5px solid var(--line);}
+  .btn.outline:hover{border-color:var(--blue);color:var(--blue);}
+  .btn:disabled{opacity:.45;cursor:not-allowed;}
+  .btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;}
+
+  /* ROAD PROGRESS - signature element */
+  .road{
+    position:relative;height:46px;border-radius:23px;background:var(--navy);
+    overflow:hidden;margin:18px 0 26px;
+  }
+  .road-lane{
+    position:absolute;top:50%;left:0;right:0;height:3px;transform:translateY(-50%);
+    background-image:repeating-linear-gradient(to right, var(--amber) 0 16px, transparent 16px 30px);
+    opacity:.55;
+  }
+  .road-fill{
+    position:absolute;top:0;left:0;bottom:0;background:linear-gradient(90deg,var(--blue),#3d7fe0);
+    border-radius:23px;transition:width .4s ease;
+  }
+  .road-car{
+    position:absolute;top:50%;transform:translate(-50%,-50%);font-size:22px;
+    transition:left .4s ease;filter:drop-shadow(0 2px 3px rgba(0,0,0,.35));
+  }
+  .road-label{
+    position:absolute;right:14px;top:50%;transform:translateY(-50%);
+    color:#fff;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;
+  }
+
+  /* QUIZ */
+  .quiz-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:4px;}
+  .q-text{font-size:19px;font-weight:700;color:var(--navy);margin-bottom:2px;line-height:1.4;}
+  .score-chip{
+    background:var(--bg);border:1.5px solid var(--line);border-radius:999px;padding:8px 16px;
+    font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--navy);font-size:13px;white-space:nowrap;
+  }
+  .canvas-shell{
+    position:relative;width:100%;aspect-ratio:16/9;background:#0000000d;
+    border-radius:12px;overflow:hidden;border:1.5px solid var(--line);margin:14px 0;
+    max-height:520px;
+  }
+  .canvas-shell img, .canvas-shell iframe{width:100%;height:100%;object-fit:contain;border:none;background:#fff;}
+  .overlay{position:absolute;inset:0;cursor:crosshair;}
+  .hotspot-box{
+    position:absolute;border:2px dashed var(--blue);background:rgba(29,95,191,.12);border-radius:6px;pointer-events:none;
+  }
+  .hotspot-box.correct{border-color:var(--green);background:rgba(46,125,91,.18);}
+  .hotspot-box.wrong{border-color:var(--red);background:rgba(193,68,61,.18);}
+  .click-marker{
+    position:absolute;width:16px;height:16px;border-radius:50%;transform:translate(-50%,-50%);
+    border:3px solid #fff;box-shadow:0 0 0 2px var(--navy);pointer-events:none;
+  }
+  .click-marker.ok{background:var(--green);}
+  .click-marker.no{background:var(--red);}
+
+  .feedback-banner{
+    padding:12px 16px;border-radius:10px;font-size:13.5px;font-weight:600;margin:12px 0;
+    display:flex;align-items:center;gap:8px;
+  }
+  .feedback-banner.ok{background:#E7F5EE;color:var(--green);}
+  .feedback-banner.no{background:#FBEAE9;color:var(--red);}
+  .feedback-banner.info{background:#EAF1FC;color:var(--blue);}
+
+  .mic-panel{
+    display:flex;align-items:center;gap:14px;background:var(--bg);border:1.5px solid var(--line);
+    border-radius:12px;padding:14px 16px;margin-top:10px;flex-wrap:wrap;
+  }
+  .mic-btn{
+    width:52px;height:52px;border-radius:50%;border:none;background:var(--navy);color:#fff;
+    font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .mic-btn.listening{
+    background:var(--red);animation:pulse 1.1s infinite;
+  }
+  @keyframes pulse{
+    0%{box-shadow:0 0 0 0 rgba(193,68,61,.45);}
+    70%{box-shadow:0 0 0 14px rgba(193,68,61,0);}
+    100%{box-shadow:0 0 0 0 rgba(193,68,61,0);}
+  }
+  .transcript{flex:1;min-width:200px;font-size:13.5px;color:var(--muted);}
+  .transcript b{color:var(--navy);}
+  .keyword-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
+  .tag{background:#fff;border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:11.5px;color:var(--muted);font-family:'JetBrains Mono',monospace;}
+
+  /* ADMIN */
+  .admin-list{display:flex;flex-direction:column;gap:12px;margin-top:18px;}
+  .admin-q-row{
+    border:1.5px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;
+    align-items:center;gap:10px;background:#fff;
+  }
+  .admin-q-row .qi{font-size:14px;color:var(--navy);font-weight:600;}
+  .admin-q-row .qm{font-size:12px;color:var(--muted);margin-top:2px;}
+  .row-actions{display:flex;gap:8px;flex-shrink:0;}
+  .icon-btn{
+    border:1.5px solid var(--line);background:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:13px;
+  }
+  .icon-btn:hover{border-color:var(--blue);}
+  .icon-btn.danger:hover{border-color:var(--red);color:var(--red);}
+
+  .tabs{display:flex;gap:6px;margin-bottom:20px;border-bottom:2px solid var(--line);}
+  .tab{
+    padding:10px 16px;font-weight:700;font-size:13.5px;color:var(--muted);cursor:pointer;
+    border-bottom:3px solid transparent;margin-bottom:-2px;
+  }
+  .tab.active{color:var(--navy);border-color:var(--amber);}
+
+  table{width:100%;border-collapse:collapse;margin-top:8px;}
+  th,td{text-align:left;padding:10px 12px;font-size:13.5px;border-bottom:1px solid var(--line);}
+  th{font-family:'JetBrains Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);}
+  tr:hover td{background:#F8FAFE;}
+  .rank-1{color:var(--amber);font-weight:800;}
+  .rank-2{color:#9AA6BD;font-weight:800;}
+  .rank-3{color:#c98a52;font-weight:800;}
+
+  .radio-row{display:flex;gap:16px;margin-bottom:6px;}
+  .radio-row label{display:flex;align-items:center;gap:6px;font-weight:600;font-size:13.5px;color:var(--ink);}
+  .note{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.5;}
+  .hidden{display:none !important;}
+  .center{text-align:center;}
+  .final-score{font-family:'JetBrains Mono',monospace;font-size:52px;font-weight:700;color:var(--navy);}
+  .resp-row{border:1.5px solid var(--line);border-radius:12px;background:#fff;overflow:hidden;}
+  .resp-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 16px;cursor:pointer;}
+  .resp-head:hover{background:#F8FAFE;}
+  .resp-head .who{font-weight:700;color:var(--navy);font-size:14px;}
+  .resp-head .meta{font-size:12px;color:var(--muted);font-family:'JetBrains Mono',monospace;}
+  .resp-head .sc{font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--navy);}
+  .resp-body{padding:0 16px 16px;border-top:1px solid var(--line);}
+  .resp-q{padding:12px 0;border-bottom:1px dashed var(--line);}
+  .resp-q:last-child{border-bottom:none;}
+  .resp-q .qt{font-weight:600;font-size:13.5px;color:var(--navy);margin-bottom:6px;}
+  .resp-tag{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px;margin-right:6px;}
+  .resp-tag.ok{background:#E7F5EE;color:var(--green);}
+  .resp-tag.no{background:#FBEAE9;color:var(--red);}
+  .resp-transcript{font-size:13px;color:var(--muted);margin-top:6px;}
+  .resp-transcript b{color:var(--ink);font-style:italic;}
+  .warn-box{background:#FFF6E8;border:1.5px solid #F2D8A0;color:#8a6414;border-radius:10px;padding:12px 14px;font-size:12.5px;line-height:1.6;margin-top:10px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-badge">🚗</div>
+      <div>
+        <div class="brand-name">New Car Simulator</div>
+        <div class="brand-sub">Field Group Training · Motor</div>
+      </div>
+    </div>
+    <button class="pill-btn hidden" id="exitBtn" onclick="goHome()">Exit</button>
+  </div>
+
+  <!-- HOME -->
+  <div id="view-home">
+    <div class="home-hero">
+      <div class="eyebrow">Start New Car Simulator</div>
+      <h1>Click. Speak. Score.</h1>
+      <p>Advisors answer live questions by clicking the right spot on the quote page and speaking their pitch — every correct click and keyword earns a point.</p>
+    </div>
+    <div class="choice-grid">
+      <div class="choice-card" onclick="goTo('view-start')">
+        <div class="ico">🎓</div>
+        <h3>Learner</h3>
+        <p>Enter your E-code and Team Leader name, then attempt the live question set.</p>
+      </div>
+      <div class="choice-card" onclick="goTo('view-admin-gate')">
+        <div class="ico">🛠️</div>
+        <h3>Admin</h3>
+        <p>Upload questions, mark the correct click zone and set keywords, and review the leaderboard.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- LEARNER START -->
+  <div id="view-start" class="hidden">
+    <div class="card" style="max-width:460px;margin:20px auto;">
+      <div class="eyebrow">Learner Login</div>
+      <h2 style="margin-bottom:20px;">Start New Car Simulator</h2>
+      <div class="field">
+        <label>E-code</label>
+        <input type="text" id="inEcode" placeholder="e.g. PW12345">
+      </div>
+      <div class="field">
+        <label>Team Leader Name</label>
+        <input type="text" id="inTL" placeholder="e.g. Manvi Gupta">
+      </div>
+      <div class="field">
+        <label>Your Name</label>
+        <input type="text" id="inName" placeholder="Advisor name">
+      </div>
+      <div id="startErr" class="feedback-banner no hidden"></div>
+      <button class="btn amber" style="width:100%;" onclick="startLearner()">Begin Simulator →</button>
+    </div>
+  </div>
+
+  <!-- ADMIN GATE -->
+  <div id="view-admin-gate" class="hidden">
+    <div class="card" style="max-width:400px;margin:20px auto;">
+      <div class="eyebrow">Admin Access</div>
+      <h2 style="margin-bottom:20px;">Enter Admin Passcode</h2>
+      <div class="field">
+        <input type="password" id="adminPass" placeholder="Passcode">
+      </div>
+      <div id="adminErr" class="feedback-banner no hidden"></div>
+      <button class="btn" style="width:100%;" onclick="checkAdmin()">Enter Admin Panel</button>
+      <p class="note">Default passcode: <b>NCT2026</b> — change it inside the code (search ADMIN_PASSCODE) before rollout.</p>
+    </div>
+  </div>
+
+  <!-- QUIZ -->
+  <div id="view-quiz" class="hidden">
+    <div class="card">
+      <div class="quiz-head">
+        <div>
+          <div class="eyebrow" id="qCounter">Question 1 of 1</div>
+          <div class="q-text" id="qText">—</div>
+        </div>
+        <div class="score-chip" id="scoreChip">Score: 0</div>
+      </div>
+      <div class="road">
+        <div class="road-lane"></div>
+        <div class="road-fill" id="roadFill" style="width:0%;"></div>
+        <div class="road-car" id="roadCar" style="left:0%;">🚗</div>
+        <div class="road-label" id="roadLabel">0%</div>
+      </div>
+
+      <div class="canvas-shell" id="canvasShell">
+        <img id="qImage" class="hidden">
+        <iframe id="qIframe" class="hidden"></iframe>
+        <div class="overlay" id="qOverlay"></div>
+      </div>
+      <div id="clickFeedback"></div>
+
+      <div class="mic-panel">
+        <button class="mic-btn" id="micBtn" onclick="toggleMic()">🎤</button>
+        <div class="transcript" id="transcriptBox">Tap the mic and speak your answer — we'll match it against expected keywords.</div>
+      </div>
+      <div id="speechFeedback"></div>
+
+      <div class="btn-row" style="margin-top:20px;justify-content:flex-end;">
+        <button class="btn outline" id="skipBtn" onclick="nextQuestion()">Skip</button>
+        <button class="btn amber" id="nextBtn" onclick="nextQuestion()" disabled>Next Question →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULT -->
+  <div id="view-result" class="hidden">
+    <div class="card center" style="max-width:520px;margin:20px auto;">
+      <div class="eyebrow">Simulation Complete</div>
+      <h2 style="margin-bottom:8px;">Nice work, <span id="resName"></span>!</h2>
+      <p style="color:var(--muted);font-size:13.5px;margin-bottom:18px;">E-code: <b id="resEcode"></b> · TL: <b id="resTL"></b></p>
+      <div class="final-score" id="finalScore">0</div>
+      <p style="color:var(--muted);font-size:13.5px;">out of <span id="finalTotal">0</span> points</p>
+      <div class="btn-row" style="justify-content:center;margin-top:20px;">
+        <button class="btn outline" onclick="goHome()">Back Home</button>
+        <button class="btn amber" onclick="renderLeaderboard();goTo('view-leaderboard')">View Leaderboard 🏆</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LEADERBOARD -->
+  <div id="view-leaderboard" class="hidden">
+    <div class="card">
+      <div class="eyebrow">Leaderboard</div>
+      <h2 style="margin-bottom:16px;">New Car Simulator — Top Performers</h2>
+      <table id="lbTable"><thead><tr><th>#</th><th>Advisor</th><th>E-code</th><th>Team Leader</th><th>Score</th><th>Date</th></tr></thead><tbody></tbody></table>
+      <div class="btn-row" style="margin-top:18px;">
+        <button class="btn outline" onclick="goHome()">Back Home</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN PANEL -->
+  <div id="view-admin" class="hidden">
+    <div class="card">
+      <div class="tabs">
+        <div class="tab active" id="tabQ" onclick="switchAdminTab('q')">Questions</div>
+        <div class="tab" id="tabR" onclick="switchAdminTab('r')">Learner Responses</div>
+        <div class="tab" id="tabL" onclick="switchAdminTab('l')">Leaderboard</div>
+      </div>
+
+      <div id="adminTabQ">
+        <h2 style="margin-bottom:4px;">Question Bank</h2>
+        <p class="note" style="margin-bottom:16px;">Add a question, attach either a screenshot or a live page link, then click-drag on the canvas to mark the correct zone.</p>
+        <div class="admin-list" id="adminQList"></div>
+        <button class="btn amber" style="margin-top:16px;" onclick="openQuestionEditor()">+ Add Question</button>
+      </div>
+
+      <div id="adminTabR" class="hidden">
+        <h2 style="margin-bottom:4px;">Learner Responses</h2>
+        <p class="note" style="margin-bottom:16px;">Every attempt, with the exact spoken transcript captured and whether each click landed in the correct zone. Data is stored in this browser on this device.</p>
+        <div class="admin-list" id="responseList"></div>
+      </div>
+
+      <div id="adminTabL" class="hidden">
+        <h2 style="margin-bottom:16px;">Leaderboard</h2>
+        <table id="adminLbTable"><thead><tr><th>#</th><th>Advisor</th><th>E-code</th><th>Team Leader</th><th>Score</th><th>Date</th></tr></thead><tbody></tbody></table>
+        <button class="btn outline" style="margin-top:14px;" onclick="resetLeaderboard()">Reset Leaderboard</button>
+      </div>
+
+      <div class="btn-row" style="margin-top:22px;">
+        <button class="btn outline" onclick="goHome()">Back Home</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- QUESTION EDITOR -->
+  <div id="view-editor" class="hidden">
+    <div class="card">
+      <div class="eyebrow">Question Editor</div>
+      <h2 style="margin-bottom:18px;" id="editorTitle">New Question</h2>
+
+      <div class="field">
+        <label>Question Text</label>
+        <textarea id="edQText" rows="2" placeholder="e.g. Where would you show the customer the No Cost EMI option?"></textarea>
+      </div>
+
+      <div class="field">
+        <label>Answer Keywords (comma separated — spoken answer must contain at least one)</label>
+        <input type="text" id="edKeywords" placeholder="e.g. no cost emi, zero cost, easy installment">
+      </div>
+
+      <div class="radio-row">
+        <label><input type="radio" name="srcType" value="image" checked onchange="toggleSrcType()"> Screenshot upload</label>
+        <label><input type="radio" name="srcType" value="iframe" onchange="toggleSrcType()"> Live page link</label>
+      </div>
+
+      <div id="srcImageBlock" class="field">
+        <label>Upload Screenshot</label>
+        <input type="file" id="edImageFile" accept="image/*" onchange="handleImageUpload(event)">
+      </div>
+      <div id="srcIframeBlock" class="field hidden">
+        <label>Page URL</label>
+        <div style="display:flex;gap:8px;">
+          <input type="url" id="edIframeUrl" style="flex:1;" placeholder="https://ci.policybazaar.com/v2/quotes?...">
+          <button type="button" class="btn outline" style="white-space:nowrap;" onclick="testLink()">Test Link ↗</button>
+          <button type="button" class="btn outline" style="white-space:nowrap;" onclick="renderEditorCanvas()">Reload Preview</button>
+        </div>
+        <div class="warn-box">
+          <b>Why this usually shows blank:</b> quote/checkout pages almost always send a security header (<code>X-Frame-Options</code> or a CSP <code>frame-ancestors</code> rule) that tells every browser "never display me inside someone else's page." That's enforced by the browser itself and set by Policybazaar's own server — no setting in this tool can override it, and it isn't a bug in the simulator.
+          <br><br>
+          <b>To confirm:</b> click <b>Test Link ↗</b> above — if the page opens fine in its own tab but still won't preview here, that proves it's the frame-block, not a broken link.
+          <br><br>
+          <b>Recommended:</b> use <b>Screenshot upload</b> instead for questions based on this page — take a screenshot of the quote screen yourself and upload it. It scores identically and has zero dependency on network access or security headers.
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Mark the correct click zone — click and drag on the preview below</label>
+        <div class="canvas-shell" id="edCanvasShell">
+          <img id="edImage" class="hidden">
+          <iframe id="edIframe" class="hidden"></iframe>
+          <div class="overlay" id="edOverlay"></div>
+        </div>
+        <p class="note" id="hotspotStatus">No zone marked yet.</p>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn outline" onclick="goTo('view-admin')">Cancel</button>
+        <button class="btn amber" onclick="saveQuestion()">Save Question</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ---------------- Config ---------------- */
+const ADMIN_PASSCODE = "NCT2026";
+const DEFAULT_LINK = "";
+
+/* ---------------- State ---------------- */
+let questions = [];
+let leaderboard = [];
+let responses = [];
+let learner = { name:"", ecode:"", tl:"" };
+let quizIdx = 0;
+let quizAnswers = []; // {clickCorrect, speechCorrect, transcript}
+let editingId = null;
+let pendingHotspot = null; // {x,y,w,h} in % while drawing
+let drawStart = null;
+let recognition = null;
+let listening = false;
+
+/* ---------------- Storage helpers ---------------- */
+async function loadQuestions(){
+  try{
+    const raw = localStorage.getItem('ncs:questions');
+    questions = raw ? JSON.parse(raw) : seedQuestions();
+  }catch(e){ questions = seedQuestions(); }
+}
+async function saveQuestions(){
+  localStorage.setItem('ncs:questions', JSON.stringify(questions));
+}
+async function loadLeaderboard(){
+  try{
+    const raw = localStorage.getItem('ncs:leaderboard');
+    leaderboard = raw ? JSON.parse(raw) : [];
+  }catch(e){ leaderboard = []; }
+}
+async function saveLeaderboard(){
+  localStorage.setItem('ncs:leaderboard', JSON.stringify(leaderboard));
+}
+async function loadResponses(){
+  try{
+    const raw = localStorage.getItem('ncs:responses');
+    responses = raw ? JSON.parse(raw) : [];
+  }catch(e){ responses = []; }
+}
+async function saveResponses(){
+  localStorage.setItem('ncs:responses', JSON.stringify(responses));
+}
+function seedQuestions(){
+  // Intentionally empty for the public GitHub version.
+  // Add training questions through Admin using screenshots.
+  return [];
+}
+
+/* ---------------- Navigation ---------------- */
+function goTo(id){
+  document.querySelectorAll('#view-home,#view-start,#view-admin-gate,#view-quiz,#view-result,#view-leaderboard,#view-admin,#view-editor')
+    .forEach(v=>v.classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+  document.getElementById('exitBtn').classList.toggle('hidden', id==='view-home');
+  stopMic();
+}
+function goHome(){ goTo('view-home'); }
+
+/* ---------------- Learner flow ---------------- */
+function startLearner(){
+  const ecode = document.getElementById('inEcode').value.trim();
+  const tl = document.getElementById('inTL').value.trim();
+  const name = document.getElementById('inName').value.trim();
+  const err = document.getElementById('startErr');
+  if(!ecode || !tl || !name){
+    err.textContent = "Please fill in your name, E-code and Team Leader name to continue.";
+    err.classList.remove('hidden');
+    return;
+  }
+  err.classList.add('hidden');
+  learner = { name, ecode, tl };
+  quizIdx = 0;
+  quizAnswers = questions.map(()=>({clickCorrect:false, speechCorrect:false, transcript:"", clicked:false}));
+  goTo('view-quiz');
+  renderQuestion();
+}
+
+function renderQuestion(){
+  const q = questions[quizIdx];
+  document.getElementById('qCounter').textContent = `Question ${quizIdx+1} of ${questions.length}`;
+  document.getElementById('qText').textContent = q.text;
+  document.getElementById('clickFeedback').innerHTML = "";
+  document.getElementById('speechFeedback').innerHTML = "";
+  document.getElementById('transcriptBox').innerHTML = "Tap the mic and speak your answer — we'll match it against expected keywords.";
+  document.getElementById('nextBtn').disabled = false;
+  updateScoreChip();
+  updateRoad();
+  renderCanvas(q, 'qImage', 'qIframe', 'qOverlay', false);
+}
+
+function renderCanvas(q, imgId, ifrId, ovId, isEditor){
+  const img = document.getElementById(imgId);
+  const ifr = document.getElementById(ifrId);
+  const ov = document.getElementById(ovId);
+  img.classList.add('hidden'); ifr.classList.add('hidden');
+  ov.innerHTML = "";
+  if(q.srcType === 'image' && q.image){
+    img.src = q.image; img.classList.remove('hidden');
+  } else if(q.srcType === 'iframe' && q.iframeUrl){
+    ifr.src = q.iframeUrl; ifr.classList.remove('hidden');
+  }
+  if(!isEditor && q.hotspot){
+    // In learner mode, hotspot is invisible until answered (feedback drawn on click)
+  }
+  ov.onclick = isEditor ? null : (e)=>handleLearnerClick(e, ov);
+}
+
+function updateScoreChip(){
+  const score = quizAnswers.reduce((s,a)=>s + (a.clickCorrect?1:0) + (a.speechCorrect?1:0), 0);
+  document.getElementById('scoreChip').textContent = `Score: ${score}`;
+}
+function updateRoad(){
+  const pct = Math.round((quizIdx / questions.length) * 100);
+  document.getElementById('roadFill').style.width = pct+'%';
+  document.getElementById('roadCar').style.left = pct+'%';
+  document.getElementById('roadLabel').textContent = pct+'%';
+}
+
+function handleLearnerClick(e, ov){
+  const a = quizAnswers[quizIdx];
+  if(a.clicked) return; // one attempt per question
+  const rect = ov.getBoundingClientRect();
+  const xPct = ((e.clientX - rect.left) / rect.width) * 100;
+  const yPct = ((e.clientY - rect.top) / rect.height) * 100;
+  const q = questions[quizIdx];
+  const h = q.hotspot;
+  const correct = h && xPct>=h.x && xPct<=h.x+h.w && yPct>=h.y && yPct<=h.y+h.h;
+  a.clicked = true;
+  a.clickCorrect = !!correct;
+
+  const marker = document.createElement('div');
+  marker.className = 'click-marker ' + (correct ? 'ok':'no');
+  marker.style.left = xPct+'%'; marker.style.top = yPct+'%';
+  ov.appendChild(marker);
+
+  if(h){
+    const box = document.createElement('div');
+    box.className = 'hotspot-box ' + (correct?'correct':'wrong');
+    box.style.left=h.x+'%'; box.style.top=h.y+'%'; box.style.width=h.w+'%'; box.style.height=h.h+'%';
+    ov.appendChild(box);
+  }
+
+  document.getElementById('clickFeedback').innerHTML = correct
+    ? `<div class="feedback-banner ok">✓ Correct zone — +1 point</div>`
+    : `<div class="feedback-banner no">✗ Not quite — the correct zone is now outlined in green.</div>`;
+  updateScoreChip();
+}
+
+/* ---------------- Speech ---------------- */
+function getRecognition(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR) return null;
+  const r = new SR();
+  r.lang = 'en-IN';
+  r.continuous = false;
+  r.interimResults = false;
+  r.maxAlternatives = 1;
+  return r;
+}
+function toggleMic(){
+  if(listening){ stopMic(); return; }
+
+  if(!window.isSecureContext){
+    document.getElementById('transcriptBox').innerHTML =
+      `⚠ Microphone access requires HTTPS or localhost. Open this dashboard from its GitHub Pages HTTPS address, not by double-clicking the HTML file.`;
+    return;
+  }
+
+  recognition = getRecognition();
+  if(!recognition){
+    document.getElementById('transcriptBox').innerHTML =
+      "Speech recognition isn't supported in this browser. Use Chrome or Edge (desktop or Android) — Safari and Firefox don't support live speech capture.";
+    return;
+  }
+  listening = true;
+  document.getElementById('micBtn').classList.add('listening');
+  document.getElementById('transcriptBox').textContent = "Listening…";
+  recognition.onresult = (ev)=>{
+    const transcript = ev.results[0][0].transcript;
+    handleSpeechResult(transcript);
+  };
+  recognition.onerror = (ev)=>{
+    stopMic();
+    const msgs = {
+      'not-allowed': "Microphone permission was blocked. Click the padlock/camera icon in the address bar and allow microphone access, then try again.",
+      'service-not-allowed': "Microphone permission was blocked. Click the padlock/camera icon in the address bar and allow microphone access, then try again.",
+      'no-speech': "No speech was detected — tap the mic and speak a bit sooner/louder, then try again.",
+      'audio-capture': "No microphone was found. Check that a mic is connected and not in use by another app.",
+      'network': "Speech recognition needs an internet connection to process audio — check your connection and try again.",
+      'aborted': "Listening was stopped before you spoke."
+    };
+    document.getElementById('transcriptBox').innerHTML =
+      "⚠ " + (msgs[ev.error] || ("Speech recognition error: " + ev.error));
+  };
+  recognition.onend = ()=>{ stopMic(); };
+  try{
+    recognition.start();
+  }catch(e){
+    stopMic();
+    document.getElementById('transcriptBox').textContent = "⚠ Couldn't start the microphone: " + e.message;
+  }
+}
+function stopMic(){
+  listening = false;
+  const btn = document.getElementById('micBtn');
+  if(btn) btn.classList.remove('listening');
+  if(recognition){ try{ recognition.stop(); }catch(e){} }
+}
+function handleSpeechResult(transcript){
+  const a = quizAnswers[quizIdx];
+  const q = questions[quizIdx];
+  const lower = transcript.toLowerCase();
+  const matched = (q.keywords||[]).find(k => lower.includes(k.toLowerCase()));
+  a.speechCorrect = !!matched;
+  a.transcript = transcript;
+  document.getElementById('transcriptBox').innerHTML = `Heard: <b>"${transcript}"</b>`;
+  document.getElementById('speechFeedback').innerHTML = matched
+    ? `<div class="feedback-banner ok">✓ Keyword "${matched}" detected — +1 point</div>`
+    : `<div class="feedback-banner no">✗ No expected keyword detected. Expected one of: ${ (q.keywords||[]).join(', ') }</div>`
+    + `<div class="keyword-tags">${(q.keywords||[]).map(k=>`<span class="tag">${k}</span>`).join('')}</div>`;
+  updateScoreChip();
+}
+
+/* ---------------- Quiz navigation ---------------- */
+function nextQuestion(){
+  quizIdx++;
+  if(quizIdx >= questions.length){
+    finishQuiz();
+  } else {
+    renderQuestion();
+  }
+}
+async function finishQuiz(){
+  updateRoad();
+  const score = quizAnswers.reduce((s,a)=>s + (a.clickCorrect?1:0) + (a.speechCorrect?1:0), 0);
+  const total = questions.length * 2;
+  document.getElementById('resName').textContent = learner.name;
+  document.getElementById('resEcode').textContent = learner.ecode;
+  document.getElementById('resTL').textContent = learner.tl;
+  document.getElementById('finalScore').textContent = score;
+  document.getElementById('finalTotal').textContent = total;
+  goTo('view-result');
+
+  const dateStr = new Date().toLocaleDateString('en-IN');
+  leaderboard.push({ name: learner.name, ecode: learner.ecode, tl: learner.tl, score, total, date: dateStr });
+  leaderboard.sort((a,b)=> b.score - a.score);
+  await saveLeaderboard();
+
+  responses.push({
+    name: learner.name, ecode: learner.ecode, tl: learner.tl, score, total, date: dateStr,
+    answers: quizAnswers.map((a,i)=>({
+      qText: questions[i].text,
+      keywords: questions[i].keywords || [],
+      transcript: a.transcript || "",
+      speechCorrect: a.speechCorrect,
+      clickCorrect: a.clickCorrect,
+      clicked: a.clicked
+    }))
+  });
+  responses.sort((a,b)=> new Date(b.date) - new Date(a.date));
+  await saveResponses();
+}
+
+function renderLeaderboard(){
+  fillLbTable('lbTable');
+}
+function fillLbTable(tableId){
+  const tbody = document.querySelector('#'+tableId+' tbody');
+  tbody.innerHTML = "";
+  leaderboard.slice(0,50).forEach((row,i)=>{
+    const tr = document.createElement('tr');
+    const rankClass = i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'';
+    tr.innerHTML = `<td class="${rankClass}">${i+1}</td><td>${row.name}</td><td>${row.ecode}</td><td>${row.tl}</td><td><b>${row.score}</b>/${row.total}</td><td>${row.date}</td>`;
+    tbody.appendChild(tr);
+  });
+  if(!leaderboard.length){
+    tbody.innerHTML = `<tr><td colspan="6" style="color:var(--muted);text-align:center;padding:20px;">No attempts yet.</td></tr>`;
+  }
+}
+async function resetLeaderboard(){
+  if(!confirm("Clear the entire leaderboard? This can't be undone.")) return;
+  leaderboard = [];
+  await saveLeaderboard();
+  fillLbTable('adminLbTable');
+}
+
+/* ---------------- Admin ---------------- */
+function checkAdmin(){
+  const val = document.getElementById('adminPass').value;
+  const err = document.getElementById('adminErr');
+  if(val !== ADMIN_PASSCODE){
+    err.textContent = "Incorrect passcode.";
+    err.classList.remove('hidden');
+    return;
+  }
+  err.classList.add('hidden');
+  document.getElementById('adminPass').value = "";
+  goTo('view-admin');
+  renderAdminList();
+  fillLbTable('adminLbTable');
+}
+function switchAdminTab(tab){
+  document.getElementById('tabQ').classList.toggle('active', tab==='q');
+  document.getElementById('tabR').classList.toggle('active', tab==='r');
+  document.getElementById('tabL').classList.toggle('active', tab==='l');
+  document.getElementById('adminTabQ').classList.toggle('hidden', tab!=='q');
+  document.getElementById('adminTabR').classList.toggle('hidden', tab!=='r');
+  document.getElementById('adminTabL').classList.toggle('hidden', tab!=='l');
+  if(tab==='l') fillLbTable('adminLbTable');
+  if(tab==='r') renderResponses();
+}
+function renderResponses(){
+  const list = document.getElementById('responseList');
+  list.innerHTML = "";
+  if(!responses.length){
+    list.innerHTML = `<p class="note">No attempts recorded yet.</p>`;
+    return;
+  }
+  responses.forEach((r,i)=>{
+    const row = document.createElement('div');
+    row.className = 'resp-row';
+    const bodyId = 'respBody_'+i;
+    row.innerHTML = `
+      <div class="resp-head" onclick="toggleResp('${bodyId}')">
+        <div>
+          <div class="who">${r.name} <span class="meta">· ${r.ecode} · TL: ${r.tl}</span></div>
+          <div class="meta">${r.date}</div>
+        </div>
+        <div class="sc">${r.score}/${r.total}</div>
+      </div>
+      <div class="resp-body hidden" id="${bodyId}">
+        ${r.answers.map(a=>`
+          <div class="resp-q">
+            <div class="qt">${a.qText}</div>
+            <span class="resp-tag ${a.clickCorrect?'ok':'no'}">${a.clickCorrect?'✓ Click correct':(a.clicked?'✗ Click wrong':'— No click')}</span>
+            <span class="resp-tag ${a.speechCorrect?'ok':'no'}">${a.speechCorrect?'✓ Keyword matched':'✗ No keyword match'}</span>
+            <div class="resp-transcript">Spoken answer: <b>${a.transcript ? '"'+a.transcript+'"' : '(no speech captured)'}</b></div>
+            <div class="resp-transcript">Expected keywords: ${a.keywords.join(', ')||'—'}</div>
+          </div>
+        `).join('')}
+      </div>`;
+    list.appendChild(row);
+  });
+}
+function toggleResp(id){
+  document.getElementById(id).classList.toggle('hidden');
+}
+function renderAdminList(){
+  const list = document.getElementById('adminQList');
+  list.innerHTML = "";
+  questions.forEach((q,i)=>{
+    const row = document.createElement('div');
+    row.className = 'admin-q-row';
+    row.innerHTML = `
+      <div>
+        <div class="qi">${i+1}. ${q.text}</div>
+        <div class="qm">${q.srcType==='iframe'?'Live link':'Screenshot'} · keywords: ${(q.keywords||[]).join(', ')||'—'} ${q.hotspot?'· zone set':'· ⚠ no zone'}</div>
+      </div>
+      <div class="row-actions">
+        <button class="icon-btn" onclick="openQuestionEditor('${q.id}')">Edit</button>
+        <button class="icon-btn danger" onclick="deleteQuestion('${q.id}')">Delete</button>
+      </div>`;
+    list.appendChild(row);
+  });
+  if(!questions.length){
+    list.innerHTML = `<p class="note">No questions yet — add your first one below.</p>`;
+  }
+}
+async function deleteQuestion(id){
+  if(!confirm("Delete this question?")) return;
+  questions = questions.filter(q=>q.id!==id);
+  await saveQuestions();
+  renderAdminList();
+}
+
+/* ---------------- Question editor ---------------- */
+function openQuestionEditor(id){
+  editingId = id || null;
+  const q = id ? questions.find(x=>x.id===id) : { text:"", keywords:[], srcType:"image", image:null, iframeUrl:"", hotspot:null };
+  document.getElementById('editorTitle').textContent = id ? "Edit Question" : "New Question";
+  document.getElementById('edQText').value = q.text || "";
+  document.getElementById('edKeywords').value = (q.keywords||[]).join(', ');
+  document.querySelector(`input[name=srcType][value=${q.srcType||'image'}]`).checked = true;
+  document.getElementById('edIframeUrl').value = q.iframeUrl || "";
+  pendingHotspot = q.hotspot ? {...q.hotspot} : null;
+  window._edImageData = q.image || null;
+  toggleSrcType();
+  renderEditorCanvas();
+  goTo('view-editor');
+}
+function testLink(){
+  const url = document.getElementById('edIframeUrl').value.trim();
+  if(!url){ alert("Enter a URL first."); return; }
+  window.open(url, '_blank');
+}
+function toggleSrcType(){
+  const type = document.querySelector('input[name=srcType]:checked').value;
+  document.getElementById('srcImageBlock').classList.toggle('hidden', type!=='image');
+  document.getElementById('srcIframeBlock').classList.toggle('hidden', type!=='iframe');
+  renderEditorCanvas();
+}
+function handleImageUpload(ev){
+  const file = ev.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (e)=>{
+    const img = new Image();
+    img.onload = ()=>{
+      // downscale to keep storage small
+      const maxW = 1000;
+      const scale = Math.min(1, maxW / img.width);
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width*scale; canvas.height = img.height*scale;
+      canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
+      window._edImageData = canvas.toDataURL('image/jpeg', 0.72);
+      renderEditorCanvas();
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+function renderEditorCanvas(){
+  const type = document.querySelector('input[name=srcType]:checked').value;
+  const img = document.getElementById('edImage');
+  const ifr = document.getElementById('edIframe');
+  const ov = document.getElementById('edOverlay');
+  img.classList.add('hidden'); ifr.classList.add('hidden');
+  ov.innerHTML = "";
+  if(type==='image' && window._edImageData){
+    img.src = window._edImageData; img.classList.remove('hidden');
+  } else if(type==='iframe'){
+    const url = document.getElementById('edIframeUrl').value.trim(); 
+    if(!url) return;
+    ifr.src = url; ifr.classList.remove('hidden');
+  }
+  drawExistingHotspot();
+  attachDrawHandlers(ov);
+}
+function drawExistingHotspot(){
+  const ov = document.getElementById('edOverlay');
+  const old = ov.querySelector('.hotspot-box');
+  if(old) old.remove();
+  if(pendingHotspot){
+    const box = document.createElement('div');
+    box.className = 'hotspot-box';
+    box.style.left=pendingHotspot.x+'%'; box.style.top=pendingHotspot.y+'%';
+    box.style.width=pendingHotspot.w+'%'; box.style.height=pendingHotspot.h+'%';
+    ov.appendChild(box);
+    document.getElementById('hotspotStatus').textContent = "Zone marked. Click-drag again to redraw.";
+  } else {
+    document.getElementById('hotspotStatus').textContent = "No zone marked yet.";
+  }
+}
+function attachDrawHandlers(ov){
+  ov.onmousedown = (e)=>{
+    const rect = ov.getBoundingClientRect();
+    drawStart = { x:((e.clientX-rect.left)/rect.width)*100, y:((e.clientY-rect.top)/rect.height)*100 };
+  };
+  ov.onmouseup = (e)=>{
+    if(!drawStart) return;
+    const rect = ov.getBoundingClientRect();
+    const end = { x:((e.clientX-rect.left)/rect.width)*100, y:((e.clientY-rect.top)/rect.height)*100 };
+    const x = Math.min(drawStart.x, end.x), y = Math.min(drawStart.y, end.y);
+    const w = Math.max(2, Math.abs(end.x-drawStart.x)), h = Math.max(2, Math.abs(end.y-drawStart.y));
+    pendingHotspot = {x,y,w,h};
+    drawStart = null;
+    drawExistingHotspot();
+  };
+}
+async function saveQuestion(){
+  const text = document.getElementById('edQText').value.trim();
+  const keywords = document.getElementById('edKeywords').value.split(',').map(s=>s.trim()).filter(Boolean);
+  const srcType = document.querySelector('input[name=srcType]:checked').value;
+  const iframeUrl = document.getElementById('edIframeUrl').value.trim();
+  if(!text){ alert("Please enter question text."); return; }
+  if(srcType==='image' && !window._edImageData){ alert("Please upload a screenshot."); return; }
+  if(srcType==='iframe' && !iframeUrl){ alert("Please enter a page URL."); return; }
+  if(!pendingHotspot){ alert("Please mark the correct click zone by dragging on the preview."); return; }
+
+  const q = {
+    id: editingId || ('q_'+Date.now()),
+    text, keywords, srcType,
+    image: srcType==='image' ? window._edImageData : null,
+    iframeUrl: srcType==='iframe' ? iframeUrl : "",
+    hotspot: pendingHotspot
+  };
+  const idx = questions.findIndex(x=>x.id===q.id);
+  if(idx>=0) questions[idx]=q; else questions.push(q);
+  await saveQuestions();
+  goTo('view-admin');
+  renderAdminList();
+}
+
+/* ---------------- Init ---------------- */
+(async function init(){
+  await loadQuestions();
+  await loadLeaderboard();
+  await loadResponses();
+  goHome();
+})();
+</script>
+</body>
+</html>
