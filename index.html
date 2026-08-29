@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>New Car Simulator</title>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap');
 
@@ -379,7 +381,7 @@
 
       <div id="adminTabR" class="hidden">
         <h2 style="margin-bottom:4px;">Learner Responses</h2>
-        <p class="note" style="margin-bottom:16px;">Every attempt, with the exact spoken transcript captured and whether each click landed in the correct zone. Data is stored in this browser on this device.</p>
+        <p class="note" style="margin-bottom:16px;">Every attempt, with the exact spoken transcript captured and whether each click landed in the correct zone.</p>
         <div class="admin-list" id="responseList"></div>
       </div>
 
@@ -458,7 +460,20 @@
 <script>
 /* ---------------- Config ---------------- */
 const ADMIN_PASSCODE = "NCT2026";
-const DEFAULT_LINK = "";
+const DEFAULT_LINK = "https://ci.policybazaar.com/v2/quotes?id=NkZwQVl1eEl5QllkcHFMeExNSVpTcGxMdDZCckJJZEVTWVBXdUhFYWIrQT0%3d&id2=eHgyUS91b29uVGo3My96RjhScmNYQT09&t=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbnF1aXJ5SWQiOiIxMjQxMDQ4MTAwIiwibmJmIjoxNzg3ODIyMjA1LCJleHAiOjE3OTMwOTI2MDUsImlhdCI6MTc4NzgyMjIwNSwiaXNzIjoiQ2FyQ0oifQ.pUhWOysVAUx0BMOG-YKk3qpph8Y2_NpeINO4NYzBwSM&isRenewal=False";
+
+/* ---------------- Firebase (shared storage across all devices) ---------------- */
+const firebaseConfig = {
+  apiKey: "AIzaSyA8bcxspR-HhHYDTYEbj2tvIRcZSNusQRQ",
+  authDomain: "new-car-simulator.firebaseapp.com",
+  databaseURL: "https://new-car-simulator-default-rtdb.firebaseio.com",
+  projectId: "new-car-simulator",
+  storageBucket: "new-car-simulator.firebasestorage.app",
+  messagingSenderId: "499247313329",
+  appId: "1:499247313329:web:7ac8cdc8cfe69affcccd90"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
 
 /* ---------------- State ---------------- */
 let questions = [];
@@ -476,35 +491,49 @@ let listening = false;
 /* ---------------- Storage helpers ---------------- */
 async function loadQuestions(){
   try{
-    const raw = localStorage.getItem('ncs:questions');
-    questions = raw ? JSON.parse(raw) : seedQuestions();
+    const snap = await db.ref('questions').once('value');
+    const val = snap.val();
+    questions = val ? JSON.parse(val) : seedQuestions();
   }catch(e){ questions = seedQuestions(); }
+  if(!questions.length) questions = seedQuestions();
 }
 async function saveQuestions(){
-  localStorage.setItem('ncs:questions', JSON.stringify(questions));
+  const payload = JSON.stringify(questions);
+  if(payload.length > 4_500_000){
+    alert("Warning: your question bank (with screenshots) is getting close to the storage limit. Consider replacing an old screenshot-based question with a live link, or compressing an image, before adding more.");
+  }
+  await db.ref('questions').set(payload);
 }
 async function loadLeaderboard(){
   try{
-    const raw = localStorage.getItem('ncs:leaderboard');
-    leaderboard = raw ? JSON.parse(raw) : [];
+    const snap = await db.ref('leaderboard').once('value');
+    const val = snap.val();
+    leaderboard = val ? JSON.parse(val) : [];
   }catch(e){ leaderboard = []; }
 }
 async function saveLeaderboard(){
-  localStorage.setItem('ncs:leaderboard', JSON.stringify(leaderboard));
+  await db.ref('leaderboard').set(JSON.stringify(leaderboard));
 }
 async function loadResponses(){
   try{
-    const raw = localStorage.getItem('ncs:responses');
-    responses = raw ? JSON.parse(raw) : [];
+    const snap = await db.ref('responses').once('value');
+    const val = snap.val();
+    responses = val ? JSON.parse(val) : [];
   }catch(e){ responses = []; }
 }
 async function saveResponses(){
-  localStorage.setItem('ncs:responses', JSON.stringify(responses));
+  await db.ref('responses').set(JSON.stringify(responses));
 }
 function seedQuestions(){
-  // Intentionally empty for the public GitHub version.
-  // Add training questions through Admin using screenshots.
-  return [];
+  return [{
+    id: 'q_'+Date.now(),
+    text: "The customer is comparing car loans. Where would you point to open the No Cost EMI option?",
+    keywords: ["no cost emi","zero cost emi","easy emi"],
+    srcType: "iframe",
+    iframeUrl: DEFAULT_LINK,
+    image: null,
+    hotspot: {x:35,y:40,w:30,h:20}
+  }];
 }
 
 /* ---------------- Navigation ---------------- */
@@ -623,7 +652,8 @@ function toggleMic(){
 
   if(!window.isSecureContext){
     document.getElementById('transcriptBox').innerHTML =
-      `⚠ Microphone access requires HTTPS or localhost. Open this dashboard from its GitHub Pages HTTPS address, not by double-clicking the HTML file.`;
+      `⚠ Microphone access needs a secure context (https://, or localhost). This file looks like it's open as a plain file:// page — ` +
+      `serve it from a simple web server, or host it internally over https, and mic capture will work.`;
     return;
   }
 
@@ -842,7 +872,7 @@ function openQuestionEditor(id){
   document.getElementById('edQText').value = q.text || "";
   document.getElementById('edKeywords').value = (q.keywords||[]).join(', ');
   document.querySelector(`input[name=srcType][value=${q.srcType||'image'}]`).checked = true;
-  document.getElementById('edIframeUrl').value = q.iframeUrl || "";
+  document.getElementById('edIframeUrl').value = q.iframeUrl || DEFAULT_LINK;
   pendingHotspot = q.hotspot ? {...q.hotspot} : null;
   window._edImageData = q.image || null;
   toggleSrcType();
@@ -867,13 +897,29 @@ function handleImageUpload(ev){
   reader.onload = (e)=>{
     const img = new Image();
     img.onload = ()=>{
-      // downscale to keep storage small
-      const maxW = 1000;
+      // Keep resolution high for crisp text/UI — only downscale if the source is unusually large.
+      const maxW = 1800;
       const scale = Math.min(1, maxW / img.width);
       const canvas = document.createElement('canvas');
-      canvas.width = img.width*scale; canvas.height = img.height*scale;
-      canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
-      window._edImageData = canvas.toDataURL('image/jpeg', 0.72);
+      canvas.width = Math.round(img.width*scale);
+      canvas.height = Math.round(img.height*scale);
+      const ctx = canvas.getContext('2d');
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(img,0,0,canvas.width,canvas.height);
+
+      // PNG is lossless, so screenshots (flat colors, sharp text) stay crisp — no JPEG blur.
+      let dataUrl = canvas.toDataURL('image/png');
+
+      // If the PNG is too large to store comfortably, fall back to high-quality JPEG (95%)
+      // rather than the old blurry 72% — still far sharper than before, but smaller.
+      if(dataUrl.length > 1_800_000){
+        dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+      }
+      window._edImageData = dataUrl;
+      const approxKB = Math.round(dataUrl.length * 0.75 / 1024);
+      document.getElementById('hotspotStatus').textContent =
+        `Image loaded (${canvas.width}×${canvas.height}px, ~${approxKB}KB). Click-drag below to mark the zone.`;
       renderEditorCanvas();
     };
     img.src = e.target.result;
@@ -890,8 +936,7 @@ function renderEditorCanvas(){
   if(type==='image' && window._edImageData){
     img.src = window._edImageData; img.classList.remove('hidden');
   } else if(type==='iframe'){
-    const url = document.getElementById('edIframeUrl').value.trim(); 
-    if(!url) return;
+    const url = document.getElementById('edIframeUrl').value.trim() || DEFAULT_LINK;
     ifr.src = url; ifr.classList.remove('hidden');
   }
   drawExistingHotspot();
